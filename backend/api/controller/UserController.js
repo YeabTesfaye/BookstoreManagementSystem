@@ -89,8 +89,8 @@ const delteUser = asyncHandler(async (req, res) => {
   if (user) {
     return res.status(200).json(user);
   }
-  res.status(500)
-  throw new Error('Internal Server Error')
+  res.status(500);
+  throw new Error("Internal Server Error");
 });
 
 // Generate Token
@@ -104,5 +104,5 @@ module.exports = {
   login,
   register,
   updateUser,
-  delteUser
+  delteUser,
 };
