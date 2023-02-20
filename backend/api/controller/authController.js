@@ -33,7 +33,7 @@ const forgetPassword = asyncHandler(async (req, res) => {
         pass: process.env.EMAIL_PASSWORD,
       },
     });
-
+    const link = process.env.CLIENT_URL + "/resetpassword" + `/${token}`;
     const mailOptions = {
       from: process.env.EMAIL_ADDRESS,
       to: email,
@@ -42,7 +42,7 @@ const forgetPassword = asyncHandler(async (req, res) => {
         <p>Hello,</p>
         <p>You are receiving this email because you requested a password reset for your account.</p>
         <p>Please click on the following link to reset your password:</p>
-        <a href="${process.env.CLIENT_URL}/reset-password/${token}">${process.env.CLIENT_URL}/reset-password/${token}</a>
+        <a href=link>${link}</a>
         <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
         <p>Thank you,</p>
         <p>Your Application Team</p>
@@ -56,8 +56,8 @@ const forgetPassword = asyncHandler(async (req, res) => {
         console.log("Email Sent", info.response);
       }
     });
-    console.log(process.env.CLIENT_URL);
-    link = process.env.CLIENT_URL + "/resetpassword" + `/${token}`
+ 
+    
     return res.status(200).json({ message: "Password reset email sent", link});
   } catch (error) {
     console.log(error);
@@ -97,7 +97,28 @@ const resetPassword = asyncHandler(async (req, res) => {
   })
 });
 
+
+// @desc verifyEmail
+// @route get /api/auth/verifyemail/:token
+// @access private
+
+const verifyEmail = asyncHandler(async(req,res) => {
+   const {token} = req.params
+  
+   const user = await User.findOne({ verificationToken  : token});
+   if(!user){
+    return res.status(400).json({msg : "Invalid Verfication Token"})
+   }
+   user.isEmailVerified = true
+   user.verificationToken = undefined
+   await user.save()
+   res.status(200).json({
+    msg : "Email Verified"
+   })
+})
+
 module.exports = {
   forgetPassword,
   resetPassword,
+  verifyEmail
 };

@@ -1,8 +1,11 @@
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require('crypto')
 const User = require("../modules/userModel");
 const { validateUser } = require("./validator");
+const nodemailer = require("nodemailer");
+
 
 // @desc register user
 // @route post /api/user
@@ -11,16 +14,16 @@ const { validateUser } = require("./validator");
 const register = asyncHandler(async (req, res) => {
   validateUser(req.body);
   const { name, email, password, age, gender, address, isAdmin } = req.body;
-
   const userExist = await User.findOne({ email });
   if (userExist) {
     res.status(404);
     throw new Error("The User is Already Exist");
   }
-
+  
+  const verificationToken =  crypto.randomBytes(20).toString('hex')
+  
   const salt = await bcrypt.genSalt();
   const hashedPassword = await bcrypt.hash(password, salt);
-
   const user = await User.create({
     name,
     email,
@@ -28,15 +31,46 @@ const register = asyncHandler(async (req, res) => {
     gender,
     address,
     isAdmin,
+    verificationToken,
     password: hashedPassword,
   });
+  const verificationUrl = process.env.CLIENT_URL + "/verifyemail" + `/${verificationToken}`;
+  
+  
   if (!user) {
-    res.status(404);
-    throw new Error("Some Thing Goes Wrong");
+    res.status(500);
+    throw new Error("Internal Server Error");
   } else {
-    res.status(200).json({
-      _id: user._id,
-    });
+     const transporter = nodemailer.createTransport({
+       service: "gmail",
+       auth: {
+         user: process.env.EMAIL_ADDRESS,
+         pass: process.env.EMAIL_PASSWORD,
+       },
+     });
+     const mailOptions = {
+       from: process.env.EMAIL_ADDRESS,
+       to: email,
+       subject: "Email Verification",
+       html: `
+         <h3>Verify your Email</h3>
+         <a href=${verificationUrl}>${verificationUrl}</a>
+       `,
+     }; 
+
+     transporter.sendMail(mailOptions, (error , info) => {
+      if(error){
+        console.log(error)
+        throw new Error('Something Goes Wrong')
+      }
+      else{
+        console.log("Email Sent", info.response)
+      }
+     })
+     res.status(200).json({
+      _id : user._id,
+      link : verificationUrl
+     })
   }
 });
 
@@ -48,20 +82,29 @@ const login = asyncHandler(async (req, res) => {
   const { password, email } = req.body;
 
   const user = await User.findOne({ email });
-
-  if (password && (await bcrypt.compare(password, user.password))) {
-    res.status(200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      password: user.password,
-      gender: user.gender,
-      token: generateToken(user._id),
-    });
-  } else {
-    res.status(401);
-    throw new Error("Authintication Failed");
+  if(!user){
+   return res.status(401).json({
+      msg : "Invalide Email or password"
+    })
   }
+  if (!user.isEmailVerified){
+    res.status(401).json({
+      msg : "Email Is Not Verifed"
+    })
+  }
+    if (password && (await bcrypt.compare(password, user.password))) {
+      res.status(200).json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        password: user.password,
+        gender: user.gender,
+        token: generateToken(user._id),
+      });
+    } else {
+      res.status(401);
+      throw new Error("Authintication Failed");
+    }
 });
 
 // @desc update  user profile
