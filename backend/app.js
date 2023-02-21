@@ -5,6 +5,7 @@ const bookRouter = require("./api/router/Bookrouter");
 const userRouter = require("./api/router/UserRouter");
 const adminRouter = require('./api/router/AdminRoute')
 const authRouter = require('./api/router/authrouter')
+const ReviewRouter = require('./api/router/ReviewRoute')
 const { limiter } = require("./api/middlerware/limiter");
 
 const app = express();
@@ -15,6 +16,7 @@ app.use("/api/books", bookRouter);
 app.use("/api/user", userRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/auth', authRouter)
+app.use('/api/reviews', ReviewRouter);
 
 app.use(limiter)
 app.use(errorHandler);

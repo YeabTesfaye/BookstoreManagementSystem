@@ -47,8 +47,7 @@ const getBooks = asyncHandler(async (req, res) => {
 
 const postBooks = asyncHandler(async (req, res) => {
   validateBook(req.body);
-  // const user = await User.findById(req.user._id);
-
+ 
   const { title, author, publisher, isbn, description, price, publishedDate } =
     req.body;
 
