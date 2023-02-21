@@ -16,12 +16,14 @@ const reviewSchema = new Schema({
         type : String,
         required: true
     }
-}, {
+}, 
+{
     timestamps : true
 })
 
 
-module.exports = mongoose.model('Review', reviewSchema)
+const Review = mongoose.model('Review', reviewSchema);
 module.exports = {
-    reviewSchema
+    reviewSchema,
+    Review
 }
