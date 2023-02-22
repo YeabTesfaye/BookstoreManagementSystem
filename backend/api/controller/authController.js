@@ -93,7 +93,7 @@ const resetPassword = asyncHandler(async (req, res) => {
   await user.save()
   await passwordReset.remove()
   return res.status(200).json({
-    msg : "the password updated sucess fully"
+    msg : "the password updated sucessfully"
   })
 });
 

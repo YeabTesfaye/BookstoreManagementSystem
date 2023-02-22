@@ -1,13 +1,12 @@
 const Joi = require("joi");
+
 const validator = (schema) => (pyload) =>
   schema.validate(pyload, { abortEarly: false });
 // .valid("Penguin, HarperCollins, Random House")
 const bookShema = Joi.object({
   title: Joi.string().min(3).max(100).required(),
   author: Joi.string().min(3).max(100).required(),
-  publisher:
-    Joi.string()
-    .required(),
+  publisher: Joi.string().required(),
   isbn: Joi.string()
     .regex(/^(?:\d[\ |-]?){13}$/)
     .required(),
@@ -25,7 +24,7 @@ const userSchema = Joi.object({
   password: Joi.string().min(6).max(100).required(),
   confirmPassword: Joi.ref("password"),
   age: Joi.number().positive(),
-  // gender: Joi.string().valid("Male Female Other").required(),
+  gender: Joi.string().valid("Male", "Female", "Other").required(),
   isAdmin: Joi.boolean(),
   DOB: Joi.date().greater("1909-02-22").required(),
   // addres : {
@@ -39,17 +38,15 @@ const updateUserSchema = Joi.object({
   password: Joi.string().min(6).max(100),
   age: Joi.number().positive(),
   gender: Joi.string().valid("Male Female Other"),
-  isAdmin : Joi.boolean(),
-  DOB : Joi.date().greater("1909-02-22")
+  isAdmin: Joi.boolean(),
+  DOB: Joi.date().greater("1909-02-22"),
 });
-
 
 const updateBookSchema = Joi.object({
   title: Joi.string().min(3).max(100),
   author: Joi.string().min(3).max(100),
   publisher: Joi.string(),
-  isbn: Joi.string()
-    .regex(/^(?:\d[\ |-]?){13}$/),
+  isbn: Joi.string().regex(/^(?:\d[\ |-]?){13}$/),
   avaliable: Joi.boolean(),
   description: Joi.string().min(10).max(200),
   price: Joi.number().positive(),
@@ -57,16 +54,25 @@ const updateBookSchema = Joi.object({
 });
 
 const reviewSchema = Joi.object({
-  rating : Joi.number().min(1).max(5).required(),
-  comment : Joi.string().required()
-})
+  rating: Joi.number().min(1).max(5).required(),
+  comment: Joi.string().required(),
+});
 const reviewUpdateSchema = Joi.object({
   rating: Joi.number().min(1).max(5),
   comment: Joi.string(),
 });
+
+const orderSchema = Joi.object({
+  quantity: Joi.number().min(1),
+  date: Joi.date(),
+  book:  Joi.required(),
+  status: Joi.string().valid("Pending", "Processing", "Shipped", "Delivered"),
+});
+
 exports.validateBook = validator(bookShema);
 exports.validateUser = validator(userSchema);
-exports.validateUserUpdate = validator(updateUserSchema)
-exports.validateBookUpdate = validator(updateBookSchema)
-exports.validateReview = validator(reviewSchema)
-exports.validateReviewUpdate = validator(reviewUpdateSchema)
+exports.validateUserUpdate = validator(updateUserSchema);
+exports.validateBookUpdate = validator(updateBookSchema);
+exports.validateReview = validator(reviewSchema);
+exports.validateReviewUpdate = validator(reviewUpdateSchema);
+exports.validateOrder = validator(orderSchema);
