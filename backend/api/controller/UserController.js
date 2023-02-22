@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require('crypto')
 const User = require("../modules/userModel");
-const { validateUser } = require("./validator");
+const { validateUser, validateUserUpdate } = require("./validator");
 const nodemailer = require("nodemailer");
 
 
@@ -12,8 +12,14 @@ const nodemailer = require("nodemailer");
 // @access public
 
 const register = asyncHandler(async (req, res) => {
-  validateUser(req.body);
-  const { name, email, password, age, gender, address, isAdmin } = req.body;
+  
+  const {error, value} = validateUser(req.body);
+  if(error){
+    return res.status(400).json({
+      msg : error.details[0]
+    })
+  }
+  const { name, email, password ,age, gender, address, DOB,isAdmin } = req.body;
   const userExist = await User.findOne({ email });
   if (userExist) {
     res.status(404);
@@ -32,6 +38,7 @@ const register = asyncHandler(async (req, res) => {
     address,
     isAdmin,
     verificationToken,
+    DOB,
     password: hashedPassword,
   });
   const verificationUrl = process.env.CLIENT_URL + "/verifyemail" + `/${verificationToken}`;
@@ -99,6 +106,7 @@ const login = asyncHandler(async (req, res) => {
         email: user.email,
         password: user.password,
         gender: user.gender,
+        isAdmin : user.isAdmin,
         token: generateToken(user._id),
       });
     } else {
@@ -112,7 +120,17 @@ const login = asyncHandler(async (req, res) => {
 // @access private
 
 const updateUser = asyncHandler(async (req, res) => {
-  validateUser(req.body);
+  if(!req.user){
+    return res.status(401).json({
+      msg : "Auth Failed"
+    })
+  }
+  const  {error} = validateUserUpdate(req.body);
+  if(error){
+    return res.status(400).json({
+      msg : error.details[0]
+    })
+  }
   const user = await User.findByIdAndUpdate(req.user.id, req.body, {
     new: true,
   });
@@ -128,6 +146,11 @@ const updateUser = asyncHandler(async (req, res) => {
 // @access private
 
 const delteUser = asyncHandler(async (req, res) => {
+  if(!req.user){
+    return res.status(401).json({
+      msg : "Auth Failed"
+    })
+  }
   const user = await User.findByIdAndDelete(req.user.id);
   if (user) {
     return res.status(200).json(user);

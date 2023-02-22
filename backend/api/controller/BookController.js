@@ -1,13 +1,18 @@
 const asyncHandler = require("express-async-handler");
 const Book = require("../modules/BookModel");
 const User = require("../modules/userModel");
-const { validateBook } = require("./validator");
+const { validateBook, validateBookUpdate } = require("./validator");
 // @desc get Books
 // @route GET /api/books
 // @access private
 
 const getBooks = asyncHandler(async (req, res) => {
   // const sort = req.query.sort || "-publishedDate";
+  if (!req.user) {
+    return res.status(401).json({
+      msg: "Auth Failed",
+    });
+  }
   const userId = req.user.id;
   const { sortBy, sortOrder, filterBy, filterValue, page, pageSize } =
     req.query;
@@ -36,8 +41,8 @@ const getBooks = asyncHandler(async (req, res) => {
   // count the total number of books to calculate the total number of pages
   const totalBooks = await Book.countDocuments({ owner: userId, ...filter });
   const totalPages = pageSize ? Math.ceil(totalBooks / pageSize) : 1;
-  
-  if (books) return res.status(200).json({books, totalPages});
+
+  if (books) return res.status(200).json({ books, totalPages });
   res.status(500).json({ message: err.message });
 });
 
@@ -46,10 +51,30 @@ const getBooks = asyncHandler(async (req, res) => {
 // @access private
 
 const postBooks = asyncHandler(async (req, res) => {
-  validateBook(req.body);
- 
-  const { title, author, publisher, isbn, description, price, publishedDate } =
-    req.body;
+  const { error } = validateBook(req.body);
+  if (error) {
+    return res.status(400).json({
+      error: error.details[0],
+    });
+  }
+
+  const {
+    title,
+    author,
+    publisher,
+    isbn,
+    description,
+    price,
+    publishedDate,
+    avaliable,
+    type,
+  } = req.body;
+  const bookExist = await Book.findOne({ isbn });
+  if (bookExist) {
+    return res.status(400).json({
+      msg: `Book With ${isbn} Exist Already`,
+    });
+  }
 
   const user = await User.findById(req.user.id);
 
@@ -66,6 +91,8 @@ const postBooks = asyncHandler(async (req, res) => {
     description,
     price,
     publishedDate,
+    avaliable,
+    type,
     owner: req.user.id,
   });
 
@@ -87,22 +114,43 @@ const postBooks = asyncHandler(async (req, res) => {
 // @route POST /api/books/:id
 // @access private
 const updateBooks = asyncHandler(async (req, res) => {
-  // validateBook(req.body)
-  const { id } = req.params;
-  const bookExist = await Book.findById(id).populate("owner");
-
-  if (!bookExist) {
-    res.status(404);
-    throw new Error("book not found");
+  const { error } = validateBookUpdate(req.body);
+  if (error) {
+    return res.status(400).json({
+      msg: error.details[0],
+    });
   }
-
-  if (bookExist.owner._id.toString() !== req.user.id) {
-    return res.status(401).json({ message: "Unauthorized" });
+  try {
+    const { id } = req.params;
+   
+    if(id.length !== 24 ){
+      return res.status(400).json({
+        msg : "Invalid Id length"
+      })
+    }
+    const bookExist = await Book.findById(id).populate("owner");
+  
+    if (!bookExist) {
+     return res.status(404).json({
+        msg : "book not found"
+      })
+    }
+  
+    if (bookExist.owner._id.toString() !== req.user.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+  
+    const updatedBook = await Book.findByIdAndUpdate(id, req.body, { new: true });
+  
+    res.status(200).json(updatedBook);
+  } 
+  catch (error) {
+  
+   return res.status(500).json({
+    msg : "Internal Server Error",
+    error : error
+   }) 
   }
-
-  const updatedBook = await Book.findByIdAndUpdate(id, req.body, { new: true });
-
-  res.status(200).json(updatedBook);
 });
 
 // @desc delete books
@@ -111,28 +159,41 @@ const updateBooks = asyncHandler(async (req, res) => {
 
 const deleteBooks = asyncHandler(async (req, res) => {
   const { id } = req.params;
-
-  const bookExist = await Book.findById(id).populate("owner");
-
-  if (!bookExist) {
-    throw new Error("book Doen't Exist");
+  if(id.length !== 24){
+    return res.status(400).json({
+      msg : "Invalid Id length"
+    })
   }
+  try {
+    const bookExist = await Book.findById(id).populate("owner");
 
-  if (bookExist.owner._id.toString() !== req.user.id) {
-    return res.status(401).json({ message: "Unauthorized" });
+    if (!bookExist) {
+      return res.status(400).json({
+        msg : "Book Doesn'\t Exist"
+      })
+    }
+
+    if (bookExist.owner._id.toString() !== req.user.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const book = await Book.findByIdAndDelete(id);
+    res.status(200).json(book);
+  } catch (error) {
+    return res.status(500).json({
+      msg : "Internal Server Error",
+      error : error
+    })
   }
-
-  const book = await Book.findByIdAndDelete(id);
-  res.status(200).json(book);
 });
 
 // @desc geting user with books
-// @route POST /api/books/user
+// @route Get /api/books/user
 // @access private
 
 const userWithBooks = asyncHandler(async (req, res) => {
   const userWithBooks = await User.findById(req.user.id).populate("books");
-  console.log(userWithBooks);
+  // console.log(userWithBooks);
 
   if (userWithBooks._id.toString() !== req.user.id) {
     return res.status(401).json({ message: "Unauthorized" });

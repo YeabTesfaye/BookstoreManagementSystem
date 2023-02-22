@@ -9,11 +9,7 @@ const userSchema = new Schema({
   age: { type: Number },
   gender: { type: String, enum: ["Male", "Female", "Other"] },
   address: {
-    street: { type: String },
-    city: { type: String },
-    state: { type: String },
-    country: { type: String },
-    zip: { type: String },
+    state: { type: String }
   },
   isAdmin: {
     type: Boolean,
@@ -24,8 +20,10 @@ const userSchema = new Schema({
     default: false,
   },
   verificationToken: {
-    type: String,
-    required: true,
+    type: String
+  },
+  DOB: {
+    type : Date,
   },
   createdAt: {
     type: Date,

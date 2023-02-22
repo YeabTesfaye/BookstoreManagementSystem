@@ -9,6 +9,6 @@ router.post('/',protect , postBooks)
 router.get('/',protect,getBooks)
 router.patch('/:id',protect , updateBooks)
 router.delete('/:id',protect,deleteBooks)
-router.post('/user',protect ,userWithBooks)
+router.get('/user',protect ,userWithBooks)
 router.get('/search',protect,serachBooks)
 module.exports = router;

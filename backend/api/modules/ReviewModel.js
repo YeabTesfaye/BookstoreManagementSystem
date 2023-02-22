@@ -15,6 +15,11 @@ const reviewSchema = new Schema({
     comment : {
         type : String,
         required: true
+    },
+    book : {
+        type: Schema.Types.ObjectId,
+        ref : "Book",
+        required : true
     }
 }, 
 {

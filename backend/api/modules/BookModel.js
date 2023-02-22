@@ -10,11 +10,17 @@ const bookSchema = new Schema({
     enum: ["Penguin", "HarperCollins", "Random House"],
     required: true,
   },
-  isbn: { type: String, validate: /^\d{10}|\d{13}$/ },
+  isbn : {
+    type: String,
+    required: true,
+    match: /^(?:\d[\ |-]?){13}$/
+  },
   description: { type: String, required: true, minLength: 10, maxLength: 200 },
   price: { type: Number, default: 0 },
   publishedDate: { type: Date, default: Date.now() },
   reviews: [reviewSchema],
+  avaliable: { type: Boolean, required: true },
+  type: { type: String, required: true },
 });
 
 module.exports = mongoose.model("Book", bookSchema);
