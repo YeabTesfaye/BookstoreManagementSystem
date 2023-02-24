@@ -1,1 +1,0 @@
-# BookstoreManagementSystem REST API
