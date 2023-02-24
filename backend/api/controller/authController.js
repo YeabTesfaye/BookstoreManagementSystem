@@ -69,6 +69,11 @@ const forgetPassword = asyncHandler(async (req, res) => {
 // @access private
 const resetPassword = asyncHandler(async (req, res) => {
   const { password } = req.body;
+  if(!password){
+    return res.status(400).json({
+      msg : "A password Filed is requried"
+    })
+  }
   const {token} = req.params 
   const passwordReset = await PasswordResetToken.findOne({token});
  

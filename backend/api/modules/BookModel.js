@@ -21,6 +21,7 @@ const bookSchema = new Schema({
   reviews: [reviewSchema],
   avaliable: { type: Boolean, required: true },
   type: { type: String, required: true },
+  photo : {type: String, }
 });
 
 module.exports = mongoose.model("Book", bookSchema);

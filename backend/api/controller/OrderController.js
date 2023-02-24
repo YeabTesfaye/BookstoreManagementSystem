@@ -26,25 +26,22 @@ const placeOrder = asyncHandler(async (req, res) => {
       });
     }
 
-    totalPrice = (quantity * bookExist.price);
-    totalPrice = 0
+    totalPrice = parseInt(parseInt(quantity) * parseInt(bookExist.price));
 
     const order = await Order.create({
       user,
       book: req.body.book,
-      status : req.body.status,
+      status: req.body.status,
       quantity: req.body.quantity,
       totalPrice,
-      date: req.body.date
+      date: req.body.date,
     });
-
-
     return res.status(200).json(order);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       msg: "Internal Server Error",
-      error: error
+      error: error,
     });
   }
 });
@@ -67,23 +64,78 @@ const retriveAllOrders = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
-        msg : "Internal Server Error"
-    })
+      msg: "Internal Server Error",
+    });
   }
 });
- 
-const updateOrder = asyncHandler(async(req,res) => {
 
-})
- 
-const deleteOrder = asyncHandler(async(req,res) => {
+// @desc updating  order from a user
+// @route PATCH /api/orders/:orderId
+// @access private
 
+const updateOrder = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  if (orderId.length !== 24) {
+    return res.status(400).json({
+      msg: "Invalid Id length",
+    });
+  }
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ["status"];
+  const isValidOperation = updates.every((update) =>
+    allowedUpdates.includes(update)
+  );
+  if (!isValidOperation) {
+    return res.status(400).json({
+      msg: "Invalid Updates",
+    });
+  }
+  try {
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        msg: "Order Not Found",
+      });
+    }
+    order.status = req.body.status;
+    return res.status(200).json(order);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: "Internal server Error",
+    });
+  }
+});
+// @desc deleting order
+// @route pATCH /api/orders/:orderId
+// @access private
+const deleteOrder = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
 
-})
+  if (orderId.length !== 24) {
+    return res.status(400).json({
+      msg: "Invalid Id length",
+    });
+  }
+  try {
+    const order = await Order.findByIdAndDelete(orderId);
+    if (!order) {
+      return res.status(404).json({
+        msg: "Order Not Found",
+      });
+    }
+    return res.status(200).json(order);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: "Internal Server Error",
+    });
+  }
+});
 
 module.exports = {
   placeOrder,
   retriveAllOrders,
   updateOrder,
-  deleteOrder
+  deleteOrder,
 };
